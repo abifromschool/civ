@@ -1,0 +1,33 @@
+# Gradle
+.gradle/
+build/
+out/
+
+# NeoForge / run configs
+run/
+runs/
+
+# Logs
+logs/
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# VS Code
+.vscode/
+
+# IntelliJ (in case you switch later)
+.idea/
+*.iml
+
+# Java compiled files
+*.class
+
+# Temporary files
+*.tmp
+*.cache
+
+# Gradle wrapper (KEEP the jar, ignore others)
+!gradle/wrapper/gradle-wrapper.jar
