@@ -1,0 +1,13 @@
+{
+  "itemGroup.civ": "Example Mod Tab",
+  "block.civ.example_block": "Example Block",
+  "item.civ.example_item": "Example Item",
+
+  "civ.configuration.title": "civ Configs",
+  "civ.configuration.section.civ.common.toml": "civ Configs",
+  "civ.configuration.section.civ.common.toml.title": "civ Configs",
+  "civ.configuration.items": "Item List",
+  "civ.configuration.logDirtBlock": "Log Dirt Block",
+  "civ.configuration.magicNumberIntroduction": "Magic Number Text",
+  "civ.configuration.magicNumber": "Magic Number"
+}
