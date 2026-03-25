@@ -1,35 +1,40 @@
 package com.civ.mixin;
 
+import com.civ.CollisionData;
+
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import minecrafttransportsimulator.entities.components.AEntityB_Existing;
+import mcinterface1211.BuilderEntityExisting;
 
 @Mixin(AEntityB_Existing.class)
 public abstract class colmixin {
 
     @Inject(method = "update", at = @At("TAIL"))
-    private void civ$applyCollisionDamping(CallbackInfo ci) {
+    private void civ$collision(CallbackInfo ci) {
 
         AEntityB_Existing self = (AEntityB_Existing) (Object) this;
 
-        if (self.world == null || self.world.isClient())
+        if (self.world.isClient())
             return;
 
-        // get MC entity via builder sync (position is already synced)
-        // we can't access MC entity directly → rely on motion dampening only
+        var entry = CollisionData.DATA.get(self.uniqueUUID);
 
-        // --- damp motion if collision flagged ---
-        // (event wrote to MC entity, IV motion still needs control)
+        if (entry == null)
+            return;
 
-        // simple damping to prevent clipping
-        if (self.motion != null) {
+        System.out.println("ENTRY FOUND (IV UUID): " + self.uniqueUUID);
 
-            // reduce speed slightly every tick after collision
-            self.motion.x *= 0.8;
-            self.motion.z *= 0.8;
+        var motion = self.motion;
+
+        double dot = motion.x * entry.nx + motion.z * entry.nz;
+
+        if (dot > 0) {
+            motion.x -= entry.nx * dot;
+            motion.z -= entry.nz * dot;
         }
     }
 }

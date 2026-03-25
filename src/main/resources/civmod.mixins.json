@@ -3,7 +3,8 @@
   "package": "com.civ.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
-    "colmixin"
+    "colmixin",
+    "BuilderAccessor"
   ],
   "injectors": {
     "defaultRequire": 1
