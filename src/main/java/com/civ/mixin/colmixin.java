@@ -33,8 +33,9 @@ public abstract class colmixin {
         double dot = motion.x * entry.nx + motion.z * entry.nz;
 
         if (dot > 0) {
-            motion.x -= entry.nx * dot;
-            motion.z -= entry.nz * dot;
+            double strength = 2.2;
+            motion.x -= entry.nx * dot * strength;
+            motion.z -= entry.nz * dot * strength;
         }
     }
 }
