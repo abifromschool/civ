@@ -27,7 +27,7 @@ sourceSets.main.resources {
 }
 
 repositories {
-    // Add here additional repositories if required by some of the dependencies below.
+
 }
 
 base {
@@ -139,6 +139,8 @@ dependencies {
     // For more info:
     // http://www.gradle.org/docs/current/userguide/artifact_dependencies_tutorial.html
     // http://www.gradle.org/docs/current/userguide/dependency_management.html
+    implementation files("libs/Immersive Vehicles-1.21.1-23.0.0.jar")
+    implementation files("libs/create-1.21.1-6.0.9.jar")
 }
 
 // This block of code expands all declared replace properties in the specified resource targets.

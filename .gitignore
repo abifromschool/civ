@@ -31,3 +31,6 @@ Thumbs.db
 
 # Gradle wrapper (KEEP the jar, ignore others)
 !gradle/wrapper/gradle-wrapper.jar
+
+# Libs (for now)
+libs/
