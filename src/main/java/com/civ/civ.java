@@ -9,18 +9,15 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.phys.Vec3;
 
-import com.simibubi.create.content.trains.entity.CarriageContraptionEntity;
 import com.simibubi.create.content.contraptions.AbstractContraptionEntity;
-import com.simibubi.create.content.contraptions.ControlledContraptionEntity;
 
 import mcinterface1211.BuilderEntityExisting;
 import minecrafttransportsimulator.entities.components.AEntityB_Existing;
-import com.civ.mixin.BuilderAccessor;
 
-import net.minecraft.world.phys.AABB;
-import net.minecraft.world.phys.Vec3;
-import net.minecraft.world.phys.shapes.VoxelShape;
+import com.civ.mixin.BuilderAccessor;
+import com.civ.mixin.ContraptionAccessor;
 
 @Mod(civ.MODID)
 public class civ {
@@ -52,13 +49,10 @@ public class civ {
 
         var id = iv.uniqueUUID;
 
-        // clear old collision
+        // clear previous tick data
         CollisionData.DATA.remove(id);
 
-        var level = entity.level();
-
-        // find nearby contraptions
-        var nearby = level.getEntities(
+        var nearby = entity.level().getEntities(
                 entity,
                 entity.getBoundingBox().inflate(4.0));
 
@@ -67,84 +61,71 @@ public class civ {
             if (other == entity)
                 continue;
 
+            // skip IV internals
+            String name = other.getClass().getName();
+            if (name.startsWith("mcinterface1211") ||
+                    name.startsWith("minecrafttransportsimulator"))
+                continue;
+
             // only Create contraptions
             if (!(other instanceof AbstractContraptionEntity contraption))
                 continue;
 
-            var contraptionData = contraption.getContraption();
-            if (contraptionData == null)
+            if (contraption.getContraption() == null)
                 continue;
 
-            var blocks = contraptionData.getBlocks();
-            if (blocks == null || blocks.isEmpty())
+            // must be near
+            if (!entity.getBoundingBox().inflate(0.5).intersects(other.getBoundingBox()))
                 continue;
 
-            // --- convert IV position to contraption space ---
-            Vec3 ivPos = entity.position();
-            Vec3 local = contraption.toLocalVector(ivPos, 0);
+            // contact point (bottom center of IV)
+            Vec3 contact = new Vec3(
+                    entity.getX(),
+                    entity.getBoundingBox().minY,
+                    entity.getZ());
 
-            BlockPos center = BlockPos.containing(local);
+            // create (mod) motion (correct)
+            Vec3 motion = contraption.getContactPointMotion(contact);
 
-            // --- convert IV AABB to contraption space ---
-            var ivBox = entity.getBoundingBox();
+            // Ground check
+            Vec3 local = contraption.toLocalVector(contact, 1);
 
-            Vec3 min = contraption.toLocalVector(
-                    new Vec3(ivBox.minX, ivBox.minY, ivBox.minZ), 0);
-            Vec3 max = contraption.toLocalVector(
-                    new Vec3(ivBox.maxX, ivBox.maxY, ivBox.maxZ), 0);
+            boolean grounded = false;
 
-            AABB localIV = new AABB(min, max);
+            // sample a small vertical range below the vehicle
+            for (double offset = 0.0; offset <= .5; offset += 1.5) {
 
-            // --- scan nearby blocks ---
-            for (int x = -1; x <= 1; x++) {
-                for (int y = -1; y <= 1; y++) {
-                    for (int z = -1; z <= 1; z++) {
+                BlockPos pos = BlockPos.containing(
+                        local.x,
+                        local.y - offset,
+                        local.z);
 
-                        BlockPos pos = center.offset(x, y, z);
+                if (((ContraptionAccessor) contraption.getContraption())
+                        .getBlocks()
+                        .containsKey(pos)) {
 
-                        if (!blocks.containsKey(pos))
-                            continue;
-
-                        var info = blocks.get(pos);
-                        var state = info.state();
-
-                        VoxelShape shape = state.getCollisionShape(level, pos)
-                                .move(pos.getX(), pos.getY(), pos.getZ());
-
-                        if (shape.isEmpty())
-                            continue;
-
-                        AABB blockBox = shape.bounds();
-
-                        // --- actual collision ---
-                        if (!blockBox.intersects(localIV))
-                            continue;
-
-                        // --- detect top surface ---
-                        boolean onTop = localIV.minY >= blockBox.maxY - 0.2 &&
-                                entity.getDeltaMovement().y <= 0;
-
-                        // --- Create motion ---
-                        Vec3 motion = contraption.getContactPointMotion(entity.position());
-
-                        CollisionData.Entry entry = new CollisionData.Entry();
-
-                        entry.mx = motion.x;
-                        entry.my = motion.y;
-                        entry.mz = motion.z;
-
-                        entry.ground = onTop;
-
-                        // optional (future side collisions)
-                        entry.nx = 0;
-                        entry.nz = 0;
-
-                        CollisionData.DATA.put(id, entry);
-
-                        return; // handle one block per tick (stable)
-                    }
+                    grounded = true;
+                    break;
                 }
             }
+
+            // Store
+            CollisionData.Entry entry = new CollisionData.Entry();
+
+            entry.mx = motion.x;
+            entry.my = motion.y;
+            entry.mz = motion.z;
+
+            entry.ground = grounded;
+
+            CollisionData.DATA.put(id, entry);
+
+            System.out.println(
+                    "STORE " + id +
+                            " motion=(" + entry.mx + ", " + entry.my + ", " + entry.mz + ")" +
+                            " grounded=" + grounded);
+
+            return; // only one contraption per tick
         }
     }
 }
